@@ -16,6 +16,7 @@ string namaPelanggan[MAX_PEMESANAN];
 string pilihanPaket[MAX_PEMESANAN];
 int tanggalPemesanan[MAX_PEMESANAN];
 int bulanPemesanan[MAX_PEMESANAN];
+int tahunPemesanan[MAX_PEMESANAN]; // Tambahkan array untuk tahun
 int jamPemesanan[MAX_PEMESANAN];
 string statusPemesanan[MAX_PEMESANAN];
 int jumlahPemesanan = 0;
@@ -48,6 +49,24 @@ string getPaketNamaByID(const string& id) {
     return "";
 }
 
+bool isValidDate(int tanggal, int bulan, int tahun) {
+    // Cek jumlah hari dalam setiap bulan
+    if (bulan < 1 || bulan > 12) return false; // Bulan tidak valid
+
+    // Array jumlah hari dalam bulan (index 0 untuk bulan 1, index 1 untuk bulan 2, dst.)
+    int daysInMonth[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+
+    // Cek tahun kabisat untuk bulan Februari
+    if (bulan == 2) {
+        if ((tahun % 4 == 0 && tahun % 100 != 0) || (tahun % 400 == 0)) {
+            daysInMonth[2] = 29; // Tahun kabisat
+        }
+    }
+
+    // Cek apakah tanggal valid
+    return (tanggal > 0 && tanggal <= daysInMonth[bulan]);
+}
+
 void tampilkanPemesanan() {
     cout << "---------------------------------------------------------------------------\n";
     cout << setw(5) << left << "ID" 
@@ -55,6 +74,7 @@ void tampilkanPemesanan() {
          << setw(10) << left << "Paket" 
          << setw(10) << left << "Tanggal" 
          << setw(10) << left << "Bulan" 
+         << setw(10) << left << "Tahun" // Tampilkan kolom Tahun
          << setw(10) << left << "Jam" 
          << setw(10) << left << "Status" 
          << endl;
@@ -69,6 +89,7 @@ void tampilkanPemesanan() {
                  << setw(10) << left << pilihanPaket[i]
                  << setw(10) << left << "  " << tanggalPemesanan[i]
                  << setw(10) << left << getNamaBulan(bulanPemesanan[i])
+                 << setw(10) << left << tahunPemesanan[i] // Tampilkan tahun
                  << setw(10) << left << jamPemesanan[i]
                  << setw(10) << left << statusPemesanan[i] << endl;
         }
@@ -114,8 +135,20 @@ void kelolaPemesanan() {
             return;
         }
 
-        tanggalPemesanan[jumlahPemesanan] = getValidatedInput("Tanggal (1-31): ", 1, 31);
+        tahunPemesanan[jumlahPemesanan] = getValidatedInput("Tahun (misal: 2025): ", 2020, 2100);
         bulanPemesanan[jumlahPemesanan] = getValidatedInput("Bulan (1-12): ", 1, 12);
+        
+        int tanggal;
+        while (true) {
+            tanggal = getValidatedInput("Tanggal (1-31): ", 1, 31);
+            if (isValidDate(tanggal, bulanPemesanan[jumlahPemesanan], tahunPemesanan[jumlahPemesanan])) {
+                tanggalPemesanan[jumlahPemesanan] = tanggal;
+                break; // Keluar dari loop jika tanggal valid
+            } else {
+                cout << "   Tanggal tidak valid untuk bulan " << getNamaBulan(bulanPemesanan[jumlahPemesanan]) << " " << tahunPemesanan[jumlahPemesanan] << ". Silakan coba lagi.\n";
+            }
+        }
+
         jamPemesanan[jumlahPemesanan] = getValidatedInput("Jam (0-23): ", 0, 23);
 
         statusPemesanan[jumlahPemesanan] = "Diproses";
@@ -130,8 +163,9 @@ void kelolaPemesanan() {
 void showMenu1() {
     cout << "\n";
     cout << "       1. > Bedasarkan Tanggal\n";
-    cout << "       2. > Perbarui Status\n";
-    cout << "       3. > Kembali\n";
+    cout << "       2. > Bedasarkan Jangka Waktu\n"; // Fitur baru
+    cout << "       3. > Perbarui Status\n"; // Diubah urutan
+    cout << "       4. > Kembali\n"; // Diubah urutan
     cout << "\n";
 }
 
@@ -139,10 +173,10 @@ int getUserChoice1() {
     int choice;
     while (true) {
         showMenu1();
-        cout << "   Masukkan pilihan Anda (1/2/3): ";
+        cout << "   Masukkan pilihan Anda (1/2/3/4): "; // Diubah urutan
         cin >> choice;
 
-        if (!validateInput(choice, 1, 3)) {
+        if (!validateInput(choice, 1, 4)) { // Diubah urutan
             clearScreen();
             banner();
             cout << "\n   ** Pilihan tidak valid. Silakan coba lagi yaa!\n";
@@ -152,6 +186,88 @@ int getUserChoice1() {
             return choice;
         }
     }
+}
+
+void cariPemesananBerdasarkanTanggal(int tanggal) {
+    clearScreen();
+    banner();
+    cout << "\n                     DAFTAR PELANGGAN DI TANGGAL " << tanggal << "\n";
+
+    cout << "---------------------------------------------------------------------------\n";
+    cout << setw(5) << left << "ID" 
+         << setw(20) << left << "Nama Pelanggan" 
+         << setw(10) << left << "Paket" 
+         << setw(10) << left << "Tanggal" 
+         << setw(10) << left << "Bulan" 
+         << setw(10) << left << "Tahun" 
+         << setw(10) << left << "Jam" 
+         << setw(10) << left << "Status" 
+         << endl;
+    cout << "---------------------------------------------------------------------------\n";
+
+    bool found = false; 
+    for (int i = 0; i < jumlahPemesanan; i++) {
+        if (tanggalPemesanan[i] == tanggal) {
+            cout << setw(5) << idPemesanan[i]
+                 << setw(20) << namaPelanggan[i]
+                 << setw(10) << pilihanPaket[i]
+                 << setw(10) << "  " << tanggalPemesanan[i]
+                 << setw(10) << getNamaBulan(bulanPemesanan[i])
+                 << setw(10) << tahunPemesanan[i] // Tampilkan tahun
+                 << setw(10) << jamPemesanan[i]
+                 << setw(10) << statusPemesanan[i] << endl;
+            found = true; // Set flag jika ada pemesanan yang ditemukan
+        }
+    }
+
+    if (!found) {
+        cout << "   Tidak ada pemesanan untuk tanggal " << tanggal << ".\n";
+    }
+
+    cout << "\n   Tekan enter untuk kembali";
+    cin.ignore();
+    cin.get();
+}
+
+void cariPemesananBerdasarkanJangkaWaktu(int tanggalAwal, int tanggalAkhir) {
+    clearScreen();
+    banner();
+    cout << "\n                     DAFTAR PELANGGAN ANTARA TANGGAL " << tanggalAwal << " SAMPAI " << tanggalAkhir << "\n";
+
+    cout << "---------------------------------------------------------------------------\n";
+    cout << setw(5) << left << "ID" 
+         << setw(20) << left << "Nama Pelanggan" 
+         << setw(10) << left << "Paket" 
+         << setw(10) << left << "Tanggal" 
+         << setw(10) << left << "Bulan" 
+         << setw(10) << left << "Tahun" 
+         << setw(10) << left << "Jam" 
+         << setw(10) << left << "Status" 
+         << endl;
+    cout << "---------------------------------------------------------------------------\n";
+
+    bool found = false; 
+    for (int i = 0; i < jumlahPemesanan; i++) {
+        if (tanggalPemesanan[i] >= tanggalAwal && tanggalPemesanan[i] <= tanggalAkhir) {
+            cout << setw(5) << idPemesanan[i]
+                 << setw(20) << namaPelanggan[i]
+                 << setw(10) << pilihanPaket[i]
+                 << setw(10) << "  " << tanggalPemesanan[i]
+                 << setw(10) << getNamaBulan(bulanPemesanan[i])
+                 << setw(10) << tahunPemesanan[i] // Tampilkan tahun
+                 << setw(10) << jamPemesanan[i]
+                 << setw(10) << statusPemesanan[i] << endl;
+            found = true; // Set flag jika ada pemesanan yang ditemukan
+        }
+    }
+
+    if (!found) {
+        cout << "   Tidak ada pemesanan antara tanggal " << tanggalAwal << " dan " << tanggalAkhir << ".\n";
+    }
+
+    cout << "\n   Tekan enter untuk kembali";
+    cin.ignore();
+    cin.get();
 }
 
 void memeriksaJadwal() {
@@ -169,43 +285,32 @@ void memeriksaJadwal() {
             cout << "\n";
             cout << "   Masukkan tanggal yang ingin diperiksa (1-31): ";
             cin >> tanggal;
-            clearScreen();
-            banner();
-            cout << "\n                     DAFTAR PELANGGAN DI TANGGAL " << tanggal << "\n";
 
-            cout << "---------------------------------------------------------------------------\n";
-            cout << setw(5) << left << "ID" 
-                 << setw(20) << left << "Nama Pelanggan" 
-                 << setw(10) << left << "Paket" 
-                 << setw(10) << left << "Tanggal" 
-                 << setw(10) << left << "Bulan" 
-                 << setw(10) << left << "Jam" 
-                 << setw(10) << left << "Status" 
-                 << endl;
-            cout << "---------------------------------------------------------------------------\n";
-
-            for (int i = 0; i < jumlahPemesanan; i++) {
-                if (tanggalPemesanan[i] == tanggal) {
-                    cout << setw(5) << idPemesanan[i]
-                         << setw(20) << namaPelanggan[i]
-                         << setw(10) << pilihanPaket[i]
-                         << setw(10) << "  " << tanggalPemesanan[i]
-                         << setw(10) << getNamaBulan(bulanPemesanan[i])
-                         << setw(10) << jamPemesanan[i]
-                         << setw(10) << statusPemesanan[i] << endl;
-                }
-            }
-            cout << "\n   Tekan enter untuk kembali";
-            cin.ignore();
-            cin.get();
+            cariPemesananBerdasarkanTanggal(tanggal);
             clearScreen();
             banner();
             break;
         }
-        case 2:
+        case 2: {
+            int tanggalAwal, tanggalAkhir;
+            clearScreen();
+            banner();
+            cout << "\n   CARI BEDASARKAN JANGKA WAKTU\n";
+            cout << "\n";
+            cout << "   Masukkan tanggal awal (1-31): ";
+            cin >> tanggalAwal;
+            cout << "   Masukkan tanggal akhir (1-31): ";
+            cin >> tanggalAkhir;
+
+            cariPemesananBerdasarkanJangkaWaktu(tanggalAwal, tanggalAkhir);
+            clearScreen();
+            banner();
+            break;
+        }
+        case 3:
             perbaruiStatus();
             break;
-        case 3:
+        case 4:
             clearScreen();
             banner();
             cout << "Kembali ke menu sebelumnya..." << endl;
